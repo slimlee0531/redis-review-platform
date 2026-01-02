@@ -1,6 +1,7 @@
 package com.review.config;
 
 import com.review.utils.LoginInterceptor;
+import com.review.utils.RefreshTokenInterceptor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -19,7 +20,8 @@ public class MvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(new LoginInterceptor(stringRedisTemplate))
+        // 登录拦截器
+        registry.addInterceptor(new LoginInterceptor())
                 .excludePathPatterns(
                         "/shop/**",
                         "/voucher/**",
@@ -28,7 +30,10 @@ public class MvcConfig implements WebMvcConfigurer {
                         "/blog/hot",
                         "/user/login",
                         "/user/code"
-                );
+                ).order(1);
+        // token 刷新拦截器
+        registry.addInterceptor(new RefreshTokenInterceptor(stringRedisTemplate))
+                .addPathPatterns("/**").order(0);
     }
 
 }
