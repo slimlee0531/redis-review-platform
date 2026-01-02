@@ -1,0 +1,179 @@
+# ==============================================================================
+# 通用构建工具产物（Maven/Gradle）
+# ==============================================================================
+# Maven
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+# Gradle
+.gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+gradle-app.setting
+!gradle-wrapper.jar
+gradlew.bat
+gradlew
+# 打包产物
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.7z
+
+# ==============================================================================
+# IDE/编辑器配置（全平台）
+# ==============================================================================
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+# Eclipse/STS
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+# VS Code
+.vscode/
+*.code-workspace
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+# Vim
+*.swp
+*.swo
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\\#*
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# ==============================================================================
+# 敏感配置文件（核心！避免泄露密码/密钥）
+# ==============================================================================
+# SpringBoot 配置文件（所有环境的敏感配置）
+application.yml
+application.yaml
+application.properties
+application-dev.yml
+application-dev.yaml
+application-dev.properties
+application-test.yml
+application-test.yaml
+application-test.properties
+application-prod.yml
+application-prod.yaml
+application-prod.properties
+# 自定义环境配置
+application-*.yml
+application-*.yaml
+application-*.properties
+# 外部化配置
+bootstrap.yml
+bootstrap.yaml
+bootstrap.properties
+bootstrap-*.yml
+# 环境变量/密钥文件
+.env
+.env.local
+.env.*.local
+.secrets/
+*.key
+*.pem
+# 数据库/中间件本地配置
+mybatis-config.xml.local
+redis-config.properties
+rabbitmq-config.yml
+# 云服务密钥（阿里云/腾讯云/OOS）
+aliyun-*.yml
+tencent-*.properties
+oss-*.conf
+
+# ==============================================================================
+# 日志/临时/缓存文件
+# ==============================================================================
+# 日志
+logs/
+*.log
+*.log.*
+*.trace
+*.out
+logs/
+log/
+# 临时文件
+*.tmp
+*.bak
+*.temp
+*.swp
+.DS_Store       # Mac系统
+Thumbs.db       # Windows系统
+ehcache.xml.bak
+# 缓存文件
+*.cache
+.ratchet-cache/
+# 本地临时目录
+temp/
+tmp/
+# JVM 调试文件
+hs_err_pid*
+replay_pid*
+
+# ==============================================================================
+# 第三方工具/测试相关
+# ==============================================================================
+# Postman/JMeter（本地测试脚本，含敏感参数）
+*.postman_collection.json
+*.jmx
+jmeter.log
+# Docker 本地覆盖配置（避免提交本地修改的docker配置）
+docker-compose.override.yml
+docker-compose.local.yml
+# 本地脚本（含数据库密码/脚本）
+*.sh.local
+*.bat.local
+sql/本地测试脚本/
+# 代码覆盖率报告
+coverage/
+jacoco/
+# SonarQube 本地配置
+.sonar/
+sonar-project.properties.local
+
+# ==============================================================================
+# 例外规则（确保必要文件不被忽略）
+# ==============================================================================
+# 保留配置模板（如果有）
+!application.yml.template
+!application-dev.yml.template
+# 保留README/帮助文档
+!HELP.md
+!README.md
+!CHANGELOG.md
+# 保留Maven/Gradle核心配置
+!pom.xml
+!build.gradle
+!settings.gradle
+# 补充：MyBatis Mapper本地临时文件
+resources/mapper/*.xml.local
