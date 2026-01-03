@@ -10,6 +10,7 @@ import com.review.entity.Shop;
 import com.review.mapper.ShopMapper;
 import com.review.service.IShopService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.review.utils.CacheClient;
 import com.review.utils.RedisConstants;
 import com.review.utils.RedisData;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -31,6 +32,9 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
     @Resource
     private StringRedisTemplate stringRedisTemplate;
 
+    @Resource
+    private CacheClient cacheClient;
+
     /**
      * 根据商铺 id 查询商铺信息
      * @param id
@@ -38,13 +42,16 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
      */
     public Result queryById(Long id) {
         // 防止缓存穿透 获取店铺信息
-//        Shop shop = queryWithPenetrationGuard(id);
+//        Shop shop = cacheClient
+//                .queryWithPenetrateGuard(CACHE_SHOP_KEY, id, Shop.class, this::getById, CACHE_SHOP_TTL, TimeUnit.SECONDS);
 
         // 防止缓存击穿 获取店铺信息 互斥锁方式
-//        Shop shop = queryWithMutex(id);
+        Shop shop = cacheClient
+                .queryWithMutex(CACHE_SHOP_KEY, id, Shop.class, this::getById, CACHE_SHOP_TTL, TimeUnit.MINUTES);
 
         // 防止缓存击穿 获取店铺信息 逻辑过期方式
-        Shop shop = queryWithLogicalExpire(id);
+//        Shop shop = cacheClient
+//                .queryWithLogicalExpire(CACHE_SHOP_KEY, id, Shop.class, this::getById, CACHE_SHOP_TTL, TimeUnit.MINUTES);
 
         if (shop == null) {
             return Result.fail("店铺不存在！！！");
