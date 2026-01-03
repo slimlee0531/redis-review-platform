@@ -42,12 +42,12 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
      */
     public Result queryById(Long id) {
         // 防止缓存穿透 获取店铺信息
-//        Shop shop = cacheClient
-//                .queryWithPenetrateGuard(CACHE_SHOP_KEY, id, Shop.class, this::getById, CACHE_SHOP_TTL, TimeUnit.SECONDS);
+        Shop shop = cacheClient
+                .queryWithPenetrateGuard(CACHE_SHOP_KEY, id, Shop.class, this::getById, CACHE_SHOP_TTL, TimeUnit.SECONDS);
 
         // 防止缓存击穿 获取店铺信息 互斥锁方式
-        Shop shop = cacheClient
-                .queryWithMutex(CACHE_SHOP_KEY, id, Shop.class, this::getById, CACHE_SHOP_TTL, TimeUnit.MINUTES);
+//        Shop shop = cacheClient
+//                .queryWithMutex(CACHE_SHOP_KEY, id, Shop.class, this::getById, CACHE_SHOP_TTL, TimeUnit.MINUTES);
 
         // 防止缓存击穿 获取店铺信息 逻辑过期方式
 //        Shop shop = cacheClient
