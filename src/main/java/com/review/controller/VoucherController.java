@@ -3,11 +3,13 @@ package com.review.controller;
 import com.review.dto.Result;
 import com.review.entity.Voucher;
 import com.review.service.IVoucherService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 
 
+@Slf4j
 @RestController
 @RequestMapping("/voucher")
 public class VoucherController {
@@ -44,7 +46,8 @@ public class VoucherController {
      */
     @GetMapping("/list/{shopId}")
     public Result queryVoucherOfShop(@PathVariable("shopId") Long shopId) {
-       return voucherService.queryVoucherOfShop(shopId);
+        log.info("查询优惠券 shopId:{}", shopId);
+        return voucherService.queryVoucherOfShop(shopId);
     }
 
 }
