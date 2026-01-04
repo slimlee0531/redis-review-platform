@@ -9,6 +9,7 @@ import com.review.service.IVoucherOrderService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.review.utils.RedisIdWorker;
 import com.review.utils.UserHolder;
+import org.springframework.aop.framework.AopContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,7 +30,6 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
      * @param voucherId
      * @return
      */
-    @Transactional(rollbackFor = Exception.class)
     public Result seckillVoucher(Long voucherId) {
         // 1. 查询优惠券
         SeckillVoucher seckillVoucher = seckillVoucherService.getById(voucherId);
@@ -46,32 +46,62 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         if (seckillVoucher.getStock() <= 0) {
             return Result.fail("该优惠券已经被抢光了！");
         }
-        // 5. 扣减库存
-        boolean updated = seckillVoucherService.update()
-                .setSql("stock = stock - 1")
-                .eq("voucher_id", voucherId)
-//                .eq("stock", seckillVoucher.getStock()) // CAS 乐观锁
-                .gt("stock", 0)     // 乐观锁成功率太低  where stock > 0
-                .update();
-        if (!updated) {
-            return Result.fail("该优惠券已经被抢光了！");
-        }
 
-        // 6. 创建订单
-        VoucherOrder voucherOrder = new VoucherOrder();
-        // 6.1. 订单id
-        long orderId = redisIdWorker.nextId("order");
-        voucherOrder.setId(orderId);
-        // 6.2. 用户id
         Long userId = UserHolder.getUser().getId();
-        voucherOrder.setUserId(userId);
-        // 6.3. 代金券id
-        voucherOrder.setVoucherId(voucherId);
+        synchronized (userId.toString().intern()) { // 保证锁在方法中事务执行后(插入订单数据)才释放
+            // 这里的调用本质是：this.createVoucherOrder(voucherId)  代理对象没机会介入
+//            return createVoucherOrder(voucherId);
 
-        // 7. 保存订单至 VoucherOrder 表
-        save(voucherOrder);
+            // 获取代理对象 (事务)
+            IVoucherOrderService proxy = (IVoucherOrderService) AopContext.currentProxy();
+            return proxy.createVoucherOrder(voucherId);
+        }
+    }
 
-        return Result.ok(orderId);
+    /**
+     * 创建优惠券订单
+     */
+    @Transactional
+    public Result createVoucherOrder(Long voucherId) { // 若锁方法 非静态方法的 synchronized，锁的是当前 Service 对象本身（this） 锁的粒度太大
+        // 5. 一人一单逻辑                               // synchronized和 @Transactional结合使用会导致「锁释放早于事务提交」
+        // 5.1. 用户id
+        Long userId = UserHolder.getUser().getId();
+
+        // 但是如果在方法内上锁，若锁在事务提交之前释放，其他线程也会进来
+//        synchronized (userId.toString().intern()) {     // 只锁当前用户
+            int count = query()
+                    .eq("user_id", userId).eq("voucher_id", voucherId).count();
+            // 5.2. 判断是否存在
+            if (count > 0) {
+                return Result.fail("用户已经购买过了！");
+            }
+
+            // 6. 扣减库存
+            boolean updated = seckillVoucherService.update()
+                    .setSql("stock = stock - 1")
+                    .eq("voucher_id", voucherId)
+//                .eq("stock", seckillVoucher.getStock()) // CAS 乐观锁
+                    .gt("stock", 0)     // 乐观锁成功率太低  where stock > 0
+                    .update();
+            if (!updated) {
+                return Result.fail("该优惠券已经被抢光了！");
+            }
+
+            // 7. 创建订单
+            VoucherOrder voucherOrder = new VoucherOrder();
+            // 7.1. 订单id
+            long orderId = redisIdWorker.nextId("order");
+            voucherOrder.setId(orderId);
+            // 7.2. 用户id
+            voucherOrder.setUserId(userId);
+            // 7.3. 代金券id
+            voucherOrder.setVoucherId(voucherId);
+
+            // 8. 保存订单至 VoucherOrder 表
+            save(voucherOrder);
+
+            return Result.ok(orderId);
+//        }
     }
 
 }
