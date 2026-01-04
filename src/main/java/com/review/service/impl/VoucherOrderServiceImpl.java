@@ -47,10 +47,16 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
             return Result.fail("该优惠券已经被抢光了！");
         }
         // 5. 扣减库存
-        seckillVoucherService.update()
+        boolean updated = seckillVoucherService.update()
                 .setSql("stock = stock - 1")
                 .eq("voucher_id", voucherId)
+//                .eq("stock", seckillVoucher.getStock()) // CAS 乐观锁
+                .gt("stock", 0)     // 乐观锁成功率太低  where stock > 0
                 .update();
+        if (!updated) {
+            return Result.fail("该优惠券已经被抢光了！");
+        }
+
         // 6. 创建订单
         VoucherOrder voucherOrder = new VoucherOrder();
         // 6.1. 订单id
