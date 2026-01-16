@@ -68,13 +68,13 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         boolean locked = lock.tryLock(5);
         // 如果获取失败，返回
         if (!locked) {
-            return Result.fail("该用户已经下过单！");
+            return Result.fail("不可重复下单！");
         }
 
         try {
             // 获取代理对象
             IVoucherOrderService proxy = (IVoucherOrderService) AopContext.currentProxy();
-            return proxy.seckillVoucher(voucherId);
+            return proxy.createVoucherOrder(voucherId);
         } finally {
             // 释放锁
             lock.unlock();
