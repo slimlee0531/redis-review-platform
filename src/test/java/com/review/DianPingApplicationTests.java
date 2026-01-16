@@ -6,6 +6,8 @@ import com.review.service.impl.ShopServiceImpl;
 import com.review.utils.CacheClient;
 import com.review.utils.RedisIdWorker;
 import org.junit.jupiter.api.Test;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -55,6 +57,25 @@ class DianPingApplicationTests {
         countDownLatch.await();
         long end = System.currentTimeMillis();
         System.out.println("Time = " + (end - begin));
+    }
+
+    @Resource
+    private RedissonClient redissonClient;
+
+    @Test
+    void testRedisson() throws InterruptedException {
+        // 获取锁（可重入），指定锁的名称
+        RLock lock = redissonClient.getLock("anyLock");
+        // 尝试获取锁，
+        boolean isLock = lock.tryLock(1, 10, TimeUnit.SECONDS);
+
+        if (isLock) {
+            try {
+                System.out.println("执行业务");
+            } finally {
+                lock.unlock();
+            }
+        }
     }
 
 }
