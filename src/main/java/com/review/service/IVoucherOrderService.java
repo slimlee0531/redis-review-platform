@@ -3,6 +3,7 @@ package com.review.service;
 import com.review.dto.Result;
 import com.review.entity.VoucherOrder;
 import com.baomidou.mybatisplus.extension.service.IService;
+import org.springframework.transaction.annotation.Transactional;
 
 
 public interface IVoucherOrderService extends IService<VoucherOrder> {
@@ -11,9 +12,9 @@ public interface IVoucherOrderService extends IService<VoucherOrder> {
 
     /**
      * 使用代理对象开启事务注解
-     * @param voucherId
+     * @param voucherOrder
      * @return
      */
-    Result createVoucherOrder(Long voucherId);
+    void createVoucherOrder(VoucherOrder voucherOrder);
 
 }
