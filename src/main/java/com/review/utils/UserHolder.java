@@ -3,7 +3,8 @@ package com.review.utils;
 import com.review.dto.UserDTO;
 
 public class UserHolder {
-    private static final ThreadLocal<UserDTO> tl = new ThreadLocal<>();
+
+    private static final ThreadLocal<UserDTO> tl = new InheritableThreadLocal<>();
 
     public static void saveUser(UserDTO user){
         tl.set(user);
@@ -16,4 +17,5 @@ public class UserHolder {
     public static void removeUser(){
         tl.remove();
     }
+
 }
