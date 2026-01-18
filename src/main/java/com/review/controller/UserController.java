@@ -1,17 +1,25 @@
 package com.review.controller;
 
+import cn.hutool.core.bean.BeanUtil;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.review.dto.LoginFormDTO;
 import com.review.dto.Result;
 import com.review.dto.UserDTO;
+import com.review.entity.Blog;
+import com.review.entity.User;
 import com.review.entity.UserInfo;
+import com.review.service.IBlogService;
 import com.review.service.IUserInfoService;
 import com.review.service.IUserService;
+import com.review.utils.SystemConstants;
 import com.review.utils.UserHolder;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpSession;
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -20,9 +28,10 @@ public class UserController {
 
     @Resource
     private IUserService userService;
-
     @Resource
     private IUserInfoService userInfoService;
+    @Resource
+    private IBlogService blogService;
 
     /**
      * 发送手机验证码
@@ -73,4 +82,18 @@ public class UserController {
         // 返回
         return Result.ok(info);
     }
+
+    @GetMapping("/{id}")
+    public Result queryUserById(@PathVariable("id") Long userId) {
+        // 查询详情
+        User user = userService.getById(userId);
+        if (user == null) {
+            return Result.ok();
+        }
+        UserDTO userDTO = BeanUtil.copyProperties(user, UserDTO.class);
+        return Result.ok(userDTO);
+    }
+
+
+
 }
