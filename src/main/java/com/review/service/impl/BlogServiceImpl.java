@@ -7,10 +7,12 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.review.dto.Result;
 import com.review.dto.UserDTO;
 import com.review.entity.Blog;
+import com.review.entity.Follow;
 import com.review.entity.User;
 import com.review.mapper.BlogMapper;
 import com.review.service.IBlogService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.review.service.IFollowService;
 import com.review.service.IUserService;
 import com.review.utils.SystemConstants;
 import com.review.utils.UserHolder;
@@ -25,14 +27,43 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.review.utils.RedisConstants.BLOG_LIKED_KEY;
+import static com.review.utils.RedisConstants.FEED_KEY;
 
 @Service
 public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IBlogService {
 
     @Resource
+    private IFollowService followService;
+    @Resource
+    private IBlogService blogService;
+    @Resource
     private IUserService userService;
     @Resource
     private StringRedisTemplate stringRedisTemplate;
+
+    @Override
+    public Result saveBlog(Blog blog) {
+        // 1. 获取登录用户 (也就是该blog的作者)
+        UserDTO user = UserHolder.getUser();
+        blog.setUserId(user.getId());
+        // 2. 保存探店博文
+        boolean saved = blogService.save(blog);
+        if (!saved) {
+            return Result.fail("新增笔记失败！");
+        }
+        // 3. 查询作者的所有粉丝 select * from tb_follow where follow_user_id = ?
+        List<Follow> followList = followService.query().eq("follow_user_id", user.getId()).list();
+        // 4. 推送笔记 id 给所有粉丝
+        for (Follow follow : followList) {
+            // 4.1. 获取粉丝 id
+            Long userId = follow.getUserId();
+            // 4.2. 推送
+            String key = FEED_KEY + userId;
+            stringRedisTemplate.opsForZSet().add(key, blog.getId().toString(), System.currentTimeMillis());
+        }
+        // 返回id
+        return Result.ok(blog.getId());
+    }
 
     /**
      * 热门博客
