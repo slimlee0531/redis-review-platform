@@ -19,7 +19,7 @@ public class RedisIdWorker {
      */
     private static final int COUNT_BITS = 32;
 
-    private StringRedisTemplate stringRedisTemplate;
+    private final StringRedisTemplate stringRedisTemplate;
 
     public RedisIdWorker(StringRedisTemplate stringRedisTemplate) {
         this.stringRedisTemplate = stringRedisTemplate;
