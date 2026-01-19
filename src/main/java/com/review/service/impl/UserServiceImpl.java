@@ -13,6 +13,7 @@ import com.review.entity.User;
 import com.review.mapper.UserMapper;
 import com.review.service.IUserService;
 import com.review.utils.RegexUtils;
+import com.review.utils.UserHolder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,7 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpSession;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -102,6 +104,26 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 
         // 返回 token
         return Result.ok(token);
+    }
+
+    /**
+     * 签到
+     * @return 无
+     */
+    public Result sign() {
+        // 1. 获取当前用户
+        Long userId = UserHolder.getUser().getId();
+        // 2. 获取日期
+        LocalDateTime now = LocalDateTime.now();
+        // 3. 拼接key
+        String keySuffix = now.format(DateTimeFormatter.ofPattern(":yyyy/MM"));
+        String key = USER_SIGN_KEY + userId + keySuffix;
+        // 4. 本月第几天
+        int dayOfMonth = now.getDayOfMonth();
+        // 5. 写入redis SETBIT key offset 1
+        stringRedisTemplate.opsForValue().setBit(key, dayOfMonth - 1, true);
+
+        return Result.ok();
     }
 
     private User createUserWithPhone(String phone) {
