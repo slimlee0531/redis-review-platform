@@ -5,6 +5,7 @@ import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.review.dto.Result;
+import com.review.dto.ScrollResult;
 import com.review.dto.UserDTO;
 import com.review.entity.Blog;
 import com.review.entity.Follow;
@@ -17,13 +18,12 @@ import com.review.service.IUserService;
 import com.review.utils.SystemConstants;
 import com.review.utils.UserHolder;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.io.Serializable;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.review.utils.RedisConstants.BLOG_LIKED_KEY;
@@ -162,6 +162,58 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
                 .map(user -> BeanUtil.copyProperties(user, UserDTO.class))
                 .collect(Collectors.toList());
         return Result.ok(userDTOList);
+    }
+
+    /**
+     * 查询关注列表idol的博客
+     * @param max 当前时间戳
+     * @param offset 偏移量
+     * @return 博客列表
+     */
+    public Result queryBlogOfFollow(Long max, Integer offset) {
+        // 1. 获取当前用户
+        Long userId = UserHolder.getUser().getId();
+        // 2. 查询收件箱 ZREVRANGEBYSCORE key Max Min (WITHSCORES) LIMIT offset count
+        String key = FEED_KEY + userId;
+        Set<ZSetOperations.TypedTuple<String>> tuples = stringRedisTemplate
+                .opsForZSet().reverseRangeByScoreWithScores(key, 0, max, offset, 2);
+        // 3. 非空判断
+        if (tuples == null || tuples.isEmpty()) {
+            return Result.ok(Collections.emptyList());
+        }
+        // 4. 解析数据 blogId minTime offset
+        List<Long> ids = new ArrayList<>(tuples.size());
+        long minTime = 0;
+        int sameTimeCount = 1;
+        for (ZSetOperations.TypedTuple<String> tuple : tuples) {
+            // 获取笔记 id
+            ids.add(Long.valueOf(Objects.requireNonNull(tuple.getValue())));
+            // 获取时间戳
+            long time = Objects.requireNonNull(tuple.getScore()).longValue();
+            if (time == minTime) {
+                sameTimeCount ++;
+            } else {
+                minTime = time;
+                sameTimeCount = 1;
+            }
+        }
+        int nextOffset = minTime == max ? sameTimeCount + offset : sameTimeCount;
+        // 5. 根据 id 查询 blog
+        String idStr = StrUtil.join(",", ids);
+        List<Blog> blogList = query().in("id", ids)
+                .last("ORDER BY FIELD(id," + idStr + ")").list();
+
+        blogList.forEach(blog -> {
+            queryBlogUser(blog);
+            isBlogLiked(blog);
+        });
+
+        ScrollResult scrollResult = new ScrollResult();
+        scrollResult.setOffset(nextOffset);
+        scrollResult.setList(blogList);
+        scrollResult.setMinTime(minTime);
+
+        return Result.ok(scrollResult);
     }
 
     /**
