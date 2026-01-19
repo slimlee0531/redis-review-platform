@@ -113,4 +113,28 @@ class DianPingApplicationTests {
         });
     }
 
+    /**
+     * 测试 UV 统计
+     */
+    @Test
+    void testHyperLogLog() {
+        String[] users = new String[1000];
+
+        int idx = 0;
+        for (int i = 0; i < 1000000; i++) {
+            // 赋值
+            users[idx ++] = "user_" + i;
+            // 每 1000 条数据发送一次
+            if (i % 1000 == 999) {
+                idx = 0;
+                stringRedisTemplate.opsForHyperLogLog().add("hll1", users);
+            }
+        }
+
+        // 统计数量
+        Long size = stringRedisTemplate.opsForHyperLogLog().size("hll1");
+        System.out.println("size = " + size);
+        System.out.println("成功率：" + (size * 1.0 / 1000000));
+    }
+
 }
